@@ -7,10 +7,13 @@ import android.app.Activity;
 import android.content.Intent;
 import android.view.Menu;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class MainActivity extends Activity {
 	final static int SELECT_CONTACT = 101;
@@ -21,6 +24,7 @@ public class MainActivity extends Activity {
 	private Spinner _phoneSpinner;
 	
 	private Contact _selectedContact;
+	private PhoneEntry _selectedPhoneEntry;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -34,8 +38,19 @@ public class MainActivity extends Activity {
 		
 		selectContact(null);
 		
-		ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, new String[] { "Home", "Mobile" });
-		_phoneSpinner.setAdapter(arrayAdapter);
+		_phoneSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
+			@Override
+			public void onItemSelected(AdapterView<?> parent, View view,
+					int position, long id) {
+				PhoneEntry entry = (PhoneEntry) parent.getItemAtPosition(position);
+				selectPhoneEntry(entry);
+			}
+
+			@Override
+			public void onNothingSelected(AdapterView<?> parent) {
+				selectPhoneEntry(null);
+			}
+		});
 		
 	}
 
@@ -57,7 +72,8 @@ public class MainActivity extends Activity {
 			return;
 		}
 		
-		Intent intent = new Intent(Intent.ACTION_CALL, _selectedContact.getPhoneNumber().prependWith("420").getCallUri());
+		Uri callUri = _selectedPhoneEntry.getPhoneNumber().prependWith("420").getCallUri();
+		Intent intent = new Intent(Intent.ACTION_CALL, callUri);
 		startActivity(intent);
 	}
 
@@ -70,24 +86,44 @@ public class MainActivity extends Activity {
 			Contact contact = new ContactLoader(this)
 					.getContactByUri(contactUri);
 			
+			if (contact == null) {
+				Toast.makeText(this, 
+						getString(R.string.error_contact_loading), 
+						Toast.LENGTH_LONG).show();
+			}
+			
 			selectContact(contact);
 		}
 	}
 	
 	private void selectContact(Contact contact) {
-		_selectedContact = contact;
-		
-		if (contact == null) {
+		if (contact == null || contact.getPhoneEntries().isEmpty()) {
+			_selectedContact = null;
+			selectPhoneEntry(null);
+			
 			_nameTextView.setVisibility(View.INVISIBLE);
 			_numberTextView.setVisibility(View.INVISIBLE);
 			_callButton.setVisibility(View.INVISIBLE);
+			_phoneSpinner.setVisibility(View.INVISIBLE);
 		} else {
+			_selectedContact = contact;
+			selectPhoneEntry(contact.getPhoneEntries().get(0));
+			
 			_nameTextView.setVisibility(View.VISIBLE);
 			_numberTextView.setVisibility(View.VISIBLE);
 			_callButton.setVisibility(View.VISIBLE);
+			_phoneSpinner.setVisibility(View.VISIBLE);
 			
 			_nameTextView.setText(contact.getName());
-			_numberTextView.setText(contact.getPhoneNumber().toString());
+			
+			_phoneSpinner.setAdapter(new ArrayAdapter<PhoneEntry>(this, android.R.layout.simple_spinner_dropdown_item, contact.getPhoneEntries()));
+		}
+	}
+	
+	private void selectPhoneEntry(PhoneEntry entry) {
+		_selectedPhoneEntry = entry;
+		if (entry != null) {
+			_numberTextView.setText(_selectedPhoneEntry.getPhoneNumber().toString());
 		}
 	}
 }

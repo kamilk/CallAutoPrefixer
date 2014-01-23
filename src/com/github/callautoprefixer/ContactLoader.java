@@ -1,5 +1,8 @@
 package com.github.callautoprefixer;
 
+import java.util.List;
+import java.util.Vector;
+
 import android.content.ContextWrapper;
 import android.database.Cursor;
 import android.net.Uri;
@@ -26,16 +29,35 @@ public class ContactLoader {
 			
 			int id = c.getInt(c.getColumnIndex(
 					ContactsContract.Contacts._ID));
-			PhoneNumber number = getPhoneNumber(id);
+			List<PhoneEntry> phoneEntries = getPhoneEntries(id);
+			if (phoneEntries.isEmpty()) {
+				return null;
+			}
 			
-			return new Contact(name, number);
+			return new Contact(name, phoneEntries);
 		} finally {
 			c.close();
 		}
 	}
 
-	private PhoneNumber getPhoneNumber(int id) {
-		Cursor c = _context.getContentResolver().query(
+	private List<PhoneEntry> getPhoneEntries(int id) {
+		Cursor c = queryContactData(id);
+		try {
+			Vector<PhoneEntry> entries = new Vector<PhoneEntry>();
+			while (c.moveToNext()) {
+				String number = c.getString(c.getColumnIndex(Phone.NUMBER));
+				
+				PhoneEntryType entryType = getPhoneEntryType(c);
+				entries.add(new PhoneEntry(new PhoneNumber(number), entryType));
+			}
+			return entries;
+		} finally {
+			c.close();
+		}
+	}
+
+	private Cursor queryContactData(int id) {
+		return _context.getContentResolver().query(
 				ContactsContract.Data.CONTENT_URI,
 				new String[] { 
 						ContactsContract.Data._ID, Phone.NUMBER,
@@ -47,14 +69,14 @@ public class ContactLoader {
 						Phone.CONTENT_ITEM_TYPE),
 				new String[] { String.valueOf(id) },
 				null);
-		try {
-			if (!c.moveToFirst()) {
-				return null;
-			}
-			String number = c.getString(c.getColumnIndex(Phone.NUMBER));
-			return new PhoneNumber(number);
-		} finally {
-			c.close();
+	}
+
+	private PhoneEntryType getPhoneEntryType(Cursor c) {
+		int type = c.getInt(c.getColumnIndexOrThrow(Phone.TYPE));
+		if (type == Phone.TYPE_CUSTOM) {
+			return new PhoneEntryType(c.getString(c.getColumnIndex(Phone.LABEL)));
+		} else {
+			return PhoneEntryType.fromAndroidContactType(type);
 		}
 	}
 }

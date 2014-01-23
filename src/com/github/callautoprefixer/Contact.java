@@ -1,18 +1,26 @@
 package com.github.callautoprefixer;
 
+import java.util.List;
+import java.util.Vector;
+
 public class Contact {
 	private String _name;
-	private PhoneNumber _phoneNumber;
+	private Vector<PhoneEntry> _phoneEntries = new Vector<PhoneEntry>();
 	
-	public Contact(String name, PhoneNumber phoneNumber) {
+	public Contact(String name, List<PhoneEntry> phoneEntries) {
 		_name = name;
-		_phoneNumber = phoneNumber;
+		_phoneEntries = new Vector<PhoneEntry>(phoneEntries);
 	}
 	
 	public String getName() {
 		return _name;
 	}
-	public PhoneNumber getPhoneNumber() {
-		return _phoneNumber;
+	
+	public void addPhoneEntry(PhoneEntry entry) {
+		_phoneEntries.add(entry);
+	}
+	
+	public List<PhoneEntry> getPhoneEntries() {
+		return _phoneEntries;
 	}
 }

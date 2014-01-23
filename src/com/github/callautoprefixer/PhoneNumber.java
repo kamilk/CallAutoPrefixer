@@ -9,6 +9,7 @@ public class PhoneNumber {
 		_value = value;
 	}
 	
+	@Override
 	public String toString() {
 		return _value;
 	}

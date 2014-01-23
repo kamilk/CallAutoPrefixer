@@ -7,5 +7,6 @@
     <string name="main_choose_contact_button">Choose contact...</string>
     <string name="main_call_button">Call!</string>
     <string name="dummy_label">dummy</string>
+    <string name="error_contact_loading">An error has occurred while loading the contact.</string>
 
 </resources>
