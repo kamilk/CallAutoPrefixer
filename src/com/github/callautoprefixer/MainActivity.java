@@ -30,7 +30,7 @@ public class MainActivity extends Activity {
 	
 	private Contact _selectedContact;
 	private PhoneEntry _selectedPhoneEntry;
-	private NumberPrefixerProvider _prefixerProvider = new NumberPrefixerProvider();
+	private NumberPrefixerRepository _prefixerRepository = new NumberPrefixerRepository();
 	private NamedNumberPrefixer _selectedNamedPrefixer;
 
 	@Override
@@ -61,9 +61,10 @@ public class MainActivity extends Activity {
 			}
 		});
 		
+		new NumberPrefixerLoader().loadInto(_prefixerRepository);
 		_codeSpinner.setAdapter(new ArrayAdapter<NamedNumberPrefixer>(
 				this, android.R.layout.simple_spinner_dropdown_item,
-				_prefixerProvider.getNamedPrefixers()));
+				_prefixerRepository.getNamedPrefixers()));
 		
 		_codeSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
 			@Override
@@ -163,12 +164,28 @@ public class MainActivity extends Activity {
 	}
 
 	private void selectDefaultNumberPrefixer(PhoneEntry entry) {
-		if (entry == null) {
-			_selectedNamedPrefixer = null;
-		} else {
-			int position = _prefixerProvider.getDefaultPrefixerPositionFor(entry);
-			_codeSpinner.setSelection(position);
-			_selectedNamedPrefixer = _prefixerProvider.getNamedPrefixers().get(position);
+		try {
+			if (entry == null) {
+				_selectedNamedPrefixer = null;
+			} else {
+				PrefixerSearchResult searchResult = _prefixerRepository
+						.findDefaultPrefixerFor(entry);
+				if (searchResult != null) {
+					_codeSpinner.setSelection(searchResult.getPosition());
+					_selectedNamedPrefixer = searchResult.getNamedPrefixer();
+				}
+			}
+		} catch (Exception e) {
+			onError(e);
 		}
+	}
+
+	private void onError(Exception e) {
+		String message = "An error has occurred.";
+		if (e.getMessage() != null) {
+			message += " " + e.getMessage();
+		}
+		Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+		Log.e(LOG_TAG, "An error has occurred.", e);
 	}
 }

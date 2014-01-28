@@ -13,7 +13,7 @@ public class PhoneEntry {
 		return _number;
 	}
 	
-	public PhoneEntryType _getEntryType() {
+	public PhoneEntryType getType() {
 		return _type;
 	}
 	
