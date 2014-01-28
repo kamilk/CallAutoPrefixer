@@ -8,5 +8,6 @@
     <string name="main_call_button">Call!</string>
     <string name="dummy_label">dummy</string>
     <string name="error_contact_loading">An error has occurred while loading the contact.</string>
+    <string name="main_code_label">Code:</string>
 
 </resources>

@@ -5,26 +5,33 @@ import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.app.Activity;
 import android.content.Intent;
+import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
 public class MainActivity extends Activity {
-	final static int SELECT_CONTACT = 101;
+	private static final String LOG_TAG = "Main Activity";
+	private final static int SELECT_CONTACT = 101;
 	
 	private TextView _nameTextView;
 	private TextView _numberTextView;
 	private Button _callButton;
 	private Spinner _phoneSpinner;
+	private Spinner _codeSpinner;
+	private LinearLayout _codeLayout;
 	
 	private Contact _selectedContact;
 	private PhoneEntry _selectedPhoneEntry;
+	private NumberPrefixerProvider _prefixerProvider = new NumberPrefixerProvider();
+	private NamedNumberPrefixer _selectedNamedPrefixer;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +42,8 @@ public class MainActivity extends Activity {
 		_numberTextView = (TextView) findViewById(R.id.main_contact_number_text);
 		_callButton = (Button) findViewById(R.id.call_button);
 		_phoneSpinner = (Spinner) findViewById(R.id.main_phone_spinner);
+		_codeSpinner = (Spinner) findViewById(R.id.main_code_spinner);
+		_codeLayout = (LinearLayout) findViewById(R.id.main_code_layout);
 		
 		selectContact(null);
 		
@@ -52,6 +61,23 @@ public class MainActivity extends Activity {
 			}
 		});
 		
+		_codeSpinner.setAdapter(new ArrayAdapter<NamedNumberPrefixer>(
+				this, android.R.layout.simple_spinner_dropdown_item,
+				_prefixerProvider.getNamedPrefixers()));
+		
+		_codeSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
+			@Override
+			public void onItemSelected(AdapterView<?> parent, View view,
+					int position, long id) {
+				_selectedNamedPrefixer = (NamedNumberPrefixer)
+						parent.getItemAtPosition(position);
+			}
+
+			@Override
+			public void onNothingSelected(AdapterView<?> parent) {
+				_selectedNamedPrefixer = null;
+			}
+		});
 	}
 
 	@Override
@@ -68,12 +94,14 @@ public class MainActivity extends Activity {
 	}
 	
 	public void onCallClick(View view) {
-		if (_selectedContact == null) {
+		if (_selectedContact == null || _selectedNamedPrefixer == null) {
+			Log.e(LOG_TAG, "onCallClick called but no contact or no prefixer has been selected");
 			return;
 		}
 		
-		Uri callUri = _selectedPhoneEntry.getPhoneNumber().prependWith("420").getCallUri();
-		Intent intent = new Intent(Intent.ACTION_CALL, callUri);
+		PhoneNumber phoneNumber = _selectedPhoneEntry.getPhoneNumber();
+		PhoneNumber prefixedPhoneNumber = _selectedNamedPrefixer.getPrefixer().processPhoneNumber(phoneNumber);
+		Intent intent = new Intent(Intent.ACTION_CALL, prefixedPhoneNumber.getCallUri());
 		startActivity(intent);
 	}
 
@@ -102,28 +130,45 @@ public class MainActivity extends Activity {
 			selectPhoneEntry(null);
 			
 			_nameTextView.setVisibility(View.INVISIBLE);
-			_numberTextView.setVisibility(View.INVISIBLE);
-			_callButton.setVisibility(View.INVISIBLE);
 			_phoneSpinner.setVisibility(View.INVISIBLE);
 		} else {
 			_selectedContact = contact;
 			selectPhoneEntry(contact.getPhoneEntries().get(0));
 			
 			_nameTextView.setVisibility(View.VISIBLE);
-			_numberTextView.setVisibility(View.VISIBLE);
-			_callButton.setVisibility(View.VISIBLE);
 			_phoneSpinner.setVisibility(View.VISIBLE);
 			
 			_nameTextView.setText(contact.getName());
-			
-			_phoneSpinner.setAdapter(new ArrayAdapter<PhoneEntry>(this, android.R.layout.simple_spinner_dropdown_item, contact.getPhoneEntries()));
+			_phoneSpinner.setAdapter(new ArrayAdapter<PhoneEntry>(
+					this, android.R.layout.simple_spinner_dropdown_item, 
+					contact.getPhoneEntries()));
 		}
 	}
 	
 	private void selectPhoneEntry(PhoneEntry entry) {
 		_selectedPhoneEntry = entry;
-		if (entry != null) {
+		selectDefaultNumberPrefixer(entry);
+		
+		if (entry == null) {
+			_numberTextView.setVisibility(View.INVISIBLE);
+			_codeLayout.setVisibility(View.INVISIBLE);
+			_callButton.setVisibility(View.INVISIBLE);
+		} else {
+			_numberTextView.setVisibility(View.VISIBLE);
+			_codeLayout.setVisibility(View.VISIBLE);
+			_callButton.setVisibility(View.VISIBLE);
+			
 			_numberTextView.setText(_selectedPhoneEntry.getPhoneNumber().toString());
+		}
+	}
+
+	private void selectDefaultNumberPrefixer(PhoneEntry entry) {
+		if (entry == null) {
+			_selectedNamedPrefixer = null;
+		} else {
+			int position = _prefixerProvider.getDefaultPrefixerPositionFor(entry);
+			_codeSpinner.setSelection(position);
+			_selectedNamedPrefixer = _prefixerProvider.getNamedPrefixers().get(position);
 		}
 	}
 }

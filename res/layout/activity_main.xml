@@ -32,8 +32,7 @@
         android:layout_below="@+id/main_contact_name_text"
         android:layout_marginTop="10dp"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        />
+        android:layout_height="wrap_content" />
     
     <TextView
         android:id="@+id/main_contact_number_text"
@@ -45,7 +44,34 @@
         android:text="@string/dummy_label"
         android:textAppearance="?android:attr/textAppearanceMedium" />
 
-    <Button
+    <LinearLayout
+        android:id="@+id/main_code_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/call_button"
+        android:layout_marginBottom="20dp"
+        android:layout_centerHorizontal="true"
+        >
+
+       	<TextView
+       	    android:id="@+id/main_code_label_text"
+       	    android:layout_width="wrap_content"
+       	    android:layout_height="wrap_content"
+       	    android:layout_marginBottom="20dp"
+       	    android:layout_marginLeft="20dp"
+       	    android:text="@string/main_code_label"
+       	    android:textAppearance="?android:attr/textAppearanceMedium"
+       	    android:textStyle="bold" />
+	
+		<Spinner 
+		    android:id="@+id/main_code_spinner"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:layout_marginLeft="10dp" />
+		
+    </LinearLayout>
+
+	<Button
         android:id="@+id/call_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
