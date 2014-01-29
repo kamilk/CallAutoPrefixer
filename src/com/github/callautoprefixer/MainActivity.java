@@ -40,7 +40,7 @@ public class MainActivity extends Activity {
 		
 		_nameTextView = (TextView) findViewById(R.id.main_contact_name_text);
 		_numberTextView = (TextView) findViewById(R.id.main_contact_number_text);
-		_callButton = (Button) findViewById(R.id.call_button);
+		_callButton = (Button) findViewById(R.id.main_call_button);
 		_phoneSpinner = (Spinner) findViewById(R.id.main_phone_spinner);
 		_codeSpinner = (Spinner) findViewById(R.id.main_code_spinner);
 		_codeLayout = (LinearLayout) findViewById(R.id.main_code_layout);
